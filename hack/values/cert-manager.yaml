@@ -1,0 +1,4 @@
+# cert-manager: Kargo's chart uses it for its self-signed webhook/API certs.
+# Image digests are set by hack/install-control-plane.sh from versions.env.
+crds:
+  enabled: true

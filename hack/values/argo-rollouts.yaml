@@ -1,0 +1,6 @@
+# Argo Rollouts: Kargo verification runs Rollouts AnalysisTemplates/AnalysisRuns,
+# so the CRDs and controller must exist. No dashboard needed.
+controller:
+  replicas: 1
+dashboard:
+  enabled: false

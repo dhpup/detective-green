@@ -1,0 +1,23 @@
+# Root app-of-apps (pattern from akuity/akp-platform). Apply this ONCE against
+# the Argo CD control plane with `make bootstrap`, and everything else in this
+# repo (every app's Argo CD and Kargo resources, and kargo-shared/) is
+# discovered and deployed by the ApplicationSets in this directory. Adding an
+# app never requires touching bootstrap/ again.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: platform-aoa
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/dhpup/detective-green.git
+    targetRevision: HEAD
+    path: bootstrap
+  destination:
+    name: in-cluster
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

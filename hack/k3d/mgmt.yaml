@@ -1,0 +1,26 @@
+# Control-plane cluster: Argo CD, Argo Rollouts, cert-manager, Kargo.
+# k3s defaults (flannel) are fine here; only the workload clusters run Cilium.
+# The node image comes from versions.env (passed with --image by hack/up.sh).
+apiVersion: k3d.io/v1alpha5
+kind: Simple
+metadata:
+  name: mgmt
+servers: 1
+agents: 0
+network: detective
+ports:
+  # Argo CD UI/API and Kargo UI/API, bound to localhost only.
+  - port: 127.0.0.1:8443:30443
+    nodeFilters: [loadbalancer]
+  - port: 127.0.0.1:8444:30444
+    nodeFilters: [loadbalancer]
+options:
+  k3s:
+    extraArgs:
+      - arg: --disable=traefik
+        nodeFilters: [server:*]
+      - arg: --disable=servicelb
+        nodeFilters: [server:*]
+  kubeconfig:
+    updateDefaultKubeconfig: true
+    switchCurrentContext: false

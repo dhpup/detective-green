@@ -1,0 +1,14 @@
+# Local planning docs (internal, not for the public repo)
+.plan/
+
+# Downloaded, sha256-verified charts
+.cache/
+
+# Generated local credentials (Kargo admin password, signing key)
+.secrets/
+
+# Editors and OS
+.DS_Store
+*.swp
+.idea/
+.vscode/

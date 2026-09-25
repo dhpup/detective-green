@@ -1,0 +1,41 @@
+# Phase 0 workload: one payload server per pool, plus a sweep client pinned to green.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: phase0
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: server-blue
+  namespace: phase0
+  labels: {app: server, pool: blue}
+spec:
+  nodeSelector: {pool: blue}
+  securityContext: {runAsNonRoot: true, seccompProfile: {type: RuntimeDefault}}
+  containers:
+    - name: payload
+      image: detective/payload:phase0
+      imagePullPolicy: Never
+      args: [serve]
+      ports: [{containerPort: 8080}]
+      securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: server-green
+  namespace: phase0
+  labels: {app: server, pool: green}
+spec:
+  nodeSelector: {pool: green}
+  securityContext: {runAsNonRoot: true, seccompProfile: {type: RuntimeDefault}}
+  containers:
+    - name: payload
+      image: detective/payload:phase0
+      imagePullPolicy: Never
+      args: [serve]
+      ports: [{containerPort: 8080}]
+      securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}

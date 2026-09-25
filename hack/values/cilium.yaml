@@ -1,0 +1,40 @@
+# Cilium on k3d workload clusters. k8sServiceHost is set per cluster by
+# hack/install-cilium.sh. Phase 0 findings are baked in; see
+# docs/reproducing-the-black-hole.md before changing MTU or routing settings.
+k8sServicePort: 6443
+kubeProxyReplacement: false # k3s keeps kube-proxy; Cilium only replaces flannel
+
+# VXLAN, not native routing: native routing half-heals the black hole (finding 6).
+routingMode: tunnel
+tunnelProtocol: vxlan
+
+# Pinned MTU. The default (0) follows eth0 and heals the culprit (finding 2).
+MTU: 1500
+pmtuDiscovery:
+  # The default ("blackhole") recovers after ~3 s instead of hanging (finding 3).
+  packetizationLayerPMTUDMode: disabled
+
+ipam:
+  operator:
+    clusterPoolIPv4PodCIDRList: ["10.42.0.0/16"]
+
+# hack/prepare-nodes.sh mounts these inside the k3d nodes.
+bpf:
+  autoMount:
+    enabled: false
+cgroup:
+  autoMount:
+    enabled: false
+  hostRoot: /run/cilium/cgroupv2
+
+operator:
+  replicas: 1
+
+hubble:
+  enabled: true
+  relay:
+    enabled: true
+  metrics:
+    enabled: [drop, tcp, flow]
+    serviceMonitor:
+      enabled: false # turned on once kube-prometheus-stack is installed (Phase 3)

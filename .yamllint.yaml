@@ -1,0 +1,13 @@
+extends: default
+ignore: |
+  .cache/
+rules:
+  document-start: disable # most Kubernetes manifests don't use "---" at the top
+  line-length:
+    max: 160
+  comments:
+    min-spaces-from-content: 1
+  indentation:
+    indent-sequences: whatever # both styles are common in Kubernetes YAML
+  truthy:
+    check-keys: false # "on:" in GitHub workflows

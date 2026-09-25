@@ -1,0 +1,16 @@
+# Kargo on the mgmt cluster. UI at https://localhost:8444 (self-signed cert).
+# The admin password hash and token signing key are generated on first run
+# into .secrets/ (gitignored) and passed in by hack/install-control-plane.sh.
+api:
+  service:
+    type: NodePort
+    nodePort: 30444
+  argocd:
+    urls:
+      "": https://localhost:8443
+controller:
+  argocd:
+    integrationEnabled: true
+    namespace: argocd
+  rollouts:
+    integrationEnabled: true

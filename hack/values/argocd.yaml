@@ -1,0 +1,15 @@
+# Argo CD on the mgmt cluster. UI at https://localhost:8443 (self-signed cert).
+# Images are pinned by digest by hack/install-control-plane.sh from versions.env.
+dex:
+  enabled: false # local admin login is enough for a laptop demo
+notifications:
+  enabled: false
+server:
+  service:
+    type: NodePort
+    nodePortHttps: 30443
+configs:
+  cm:
+    # Poll git every 60s. Promotions trigger syncs directly, so this only
+    # affects how fast merged changes to main are picked up.
+    timeout.reconciliation: 60s

@@ -1,0 +1,39 @@
+# Discovers apps/*/argocd/ and creates one Argo CD Application per app that
+# syncs that app's AppProject and ApplicationSets to the Argo CD control plane.
+# Adding a new app directory under apps/ is all that's needed; no edits here.
+# Apps without a kargo/ directory (observability, informant, cold-case) are
+# picked up here too; kargo-apps simply skips them.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: argocd-apps
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+  - git:
+      repoURL: https://github.com/dhpup/detective-green.git
+      revision: HEAD
+      directories:
+      - path: apps/*/argocd
+  template:
+    metadata:
+      name: 'argocd-{{index .path.segments 1}}'
+    spec:
+      # Uses the default project to avoid a bootstrap chicken-and-egg: each
+      # app's AppProject lives inside the argocd/ path this Application syncs.
+      project: default
+      source:
+        repoURL: https://github.com/dhpup/detective-green.git
+        targetRevision: HEAD
+        path: '{{.path.path}}'
+        directory:
+          recurse: true
+      destination:
+        name: in-cluster
+        namespace: argocd
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true

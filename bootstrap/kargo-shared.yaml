@@ -1,0 +1,26 @@
+# Syncs kargo-shared/ to the Kargo control plane (the Argo CD cluster named
+# `kargo`). In this repo kargo-shared/ holds ClusterAnalysisTemplates: the
+# reusable "detective's checks" that every Project's Stages can reference with
+# `kind: ClusterAnalysisTemplate`. They're Argo Rollouts resources (open
+# source, CNCF), so no enterprise API group is needed.
+#
+# No destination namespace: ClusterAnalysisTemplates are cluster-scoped.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kargo-shared
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/dhpup/detective-green.git
+    targetRevision: HEAD
+    path: kargo-shared
+    directory:
+      recurse: true
+  destination:
+    name: kargo
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

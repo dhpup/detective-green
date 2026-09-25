@@ -1,0 +1,34 @@
+# Workload cluster "prod": 1 server + 2 agents. Agents are the two node pools:
+# agent-0 is pool=green, agent-1 is pool=blue (the culprit only hits blue).
+# k3s networking is turned off so Cilium owns it (installed by hack/install-cilium.sh).
+# The node image comes from versions.env (passed with --image by hack/up.sh).
+apiVersion: k3d.io/v1alpha5
+kind: Simple
+metadata:
+  name: prod
+servers: 1
+agents: 2
+network: detective
+ports:
+  # Grafana (NodePort 30300), bound to localhost only.
+  - port: 127.0.0.1:3002:30300
+    nodeFilters: [loadbalancer]
+options:
+  k3s:
+    extraArgs:
+      - arg: --flannel-backend=none
+        nodeFilters: [server:*]
+      - arg: --disable-network-policy
+        nodeFilters: [server:*]
+      - arg: --disable=traefik
+        nodeFilters: [server:*]
+      - arg: --disable=servicelb
+        nodeFilters: [server:*]
+    nodeLabels:
+      - label: pool=green
+        nodeFilters: [agent:0]
+      - label: pool=blue
+        nodeFilters: [agent:1]
+  kubeconfig:
+    updateDefaultKubeconfig: true
+    switchCurrentContext: false

@@ -1,0 +1,4 @@
+# Overlay for the native routing variant: no VXLAN, pods routed directly over the k3d network.
+routingMode: native
+autoDirectNodeRoutes: true
+ipv4NativeRoutingCIDR: 10.42.0.0/16

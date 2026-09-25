@@ -1,0 +1,43 @@
+# Runs on every PR and push to main. Same checks as `make lint` locally.
+# Every action is pinned by commit SHA (tag in the comment).
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+      - name: Install pre-commit
+        run: pip install pre-commit==4.6.2
+      - name: Run all hooks
+        run: pre-commit run --all-files --show-diff-on-failure
+
+  charts:
+    # Every chart in versions.env must still match its pinned sha256, and every
+    # image override must render as a digest-pinned reference.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Verify chart digests and image pins
+        run: hack/verify-pins.sh

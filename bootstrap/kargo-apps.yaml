@@ -1,0 +1,46 @@
+# Discovers apps/*/kargo/ and creates one Argo CD Application per app that
+# syncs that app's Kargo resources (Project, Warehouse, Stages, PromotionTasks,
+# AnalysisTemplates) to the Kargo control plane: the Argo CD cluster named
+# `kargo` (registered by hack/register-clusters.sh).
+#
+# NOTE: automated sync is REQUIRED here. Without it, merged changes to
+# apps/*/kargo/*.yaml never reach Kargo. Chapter 6 depends on this, because we
+# merge a verification change live.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: kargo-apps
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+  - git:
+      repoURL: https://github.com/dhpup/detective-green.git
+      revision: HEAD
+      directories:
+      - path: apps/*/kargo
+      # On first bootstrap these Applications can be generated before their
+      # AppProjects exist. Harmless, but requeue quickly so the retry is fast.
+      requeueAfterSeconds: 30
+  template:
+    metadata:
+      name: 'kargo-{{index .path.segments 1}}'
+    spec:
+      # Convention: the app directory name IS the Argo CD AppProject name and
+      # the Kargo Project name.
+      project: '{{index .path.segments 1}}'
+      source:
+        repoURL: https://github.com/dhpup/detective-green.git
+        targetRevision: HEAD
+        path: '{{.path.path}}'
+        directory:
+          recurse: true
+      destination:
+        name: kargo
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+        - CreateNamespace=true

@@ -1,0 +1,14 @@
+# Ownership split (pattern from akuity/akp-platform): platform-owned paths need
+# platform review. App manifests (apps/*/base, apps/*/env) are deliberately not
+# listed; app teams own their deployment config. That split is part of the
+# story: the culprit commit went through the platform path, which had no gate.
+#
+# hack/personalize.sh rewrites the owner below for your fork.
+
+/bootstrap/          @dhpup
+/kargo-shared/       @dhpup
+/apps/*/argocd/      @dhpup
+/apps/*/kargo/       @dhpup
+/hack/               @dhpup
+/versions.env        @dhpup
+/.github/            @dhpup

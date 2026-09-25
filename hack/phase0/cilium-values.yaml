@@ -1,0 +1,31 @@
+# Cilium on k3d (Phase 0). k3s keeps kube-proxy; Cilium only replaces flannel.
+k8sServiceHost: k3d-phase0-server-0
+k8sServicePort: 6443
+kubeProxyReplacement: false
+routingMode: tunnel
+tunnelProtocol: vxlan
+ipam:
+  operator:
+    clusterPoolIPv4PodCIDRList: ["10.42.0.0/16"]
+bpf:
+  autoMount:
+    enabled: false
+cgroup:
+  autoMount:
+    enabled: false
+  hostRoot: /run/cilium/cgroupv2
+# Pin the MTU so Cilium doesn't follow eth0. The default (0) auto-detects and
+# re-applies the node's MTU to pod routes, which heals a node-local MTU change.
+MTU: 1500
+pmtuDiscovery:
+  # The default ("blackhole") turns on TCP MTU probing in pods, which recovers
+  # from the black hole after ~3s. Disabled so uploads hang like the story says.
+  packetizationLayerPMTUDMode: disabled
+operator:
+  replicas: 1
+hubble:
+  enabled: true
+  relay:
+    enabled: true
+  metrics:
+    enabled: [drop, tcp, flow]

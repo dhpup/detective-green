@@ -1,0 +1,28 @@
+# Phase 0 scratch cluster: 1 server + 2 agents (green, blue), Cilium as the CNI.
+# The node image comes from versions.env (passed with --image by up.sh).
+apiVersion: k3d.io/v1alpha5
+kind: Simple
+metadata:
+  name: phase0
+servers: 1
+agents: 2
+network: detective-p0
+options:
+  k3s:
+    extraArgs:
+      - arg: --flannel-backend=none
+        nodeFilters: [server:*]
+      - arg: --disable-network-policy
+        nodeFilters: [server:*]
+      - arg: --disable=traefik
+        nodeFilters: [server:*]
+      - arg: --disable=servicelb
+        nodeFilters: [server:*]
+    nodeLabels:
+      - label: pool=green
+        nodeFilters: [agent:0]
+      - label: pool=blue
+        nodeFilters: [agent:1]
+  kubeconfig:
+    updateDefaultKubeconfig: true
+    switchCurrentContext: false

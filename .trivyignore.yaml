@@ -1,0 +1,13 @@
+# Documented exceptions for `make verify-images`. Each one is scoped to the
+# exact binaries affected and expires, so it can't hide anything new. Review
+# and remove when a fixed upstream release ships.
+vulnerabilities:
+  - id: CVE-2025-68121
+    paths:
+      - usr/local/bin/git-lfs
+      - usr/local/bin/kustomize
+    statement: >-
+      Go standard library CVE in helper binaries bundled in quay.io/argoproj/argocd:v3.5.3
+      (git-lfs, kustomize), not in Argo CD itself. v3.5.3 is the latest release as of
+      2026-09-25. Bump ARGOCD_IMAGE when a rebuilt release ships.
+    expired_at: 2026-11-30
