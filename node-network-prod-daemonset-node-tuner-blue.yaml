@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    app: node-tuner
+    pool: blue
+  name: node-tuner-blue
+  namespace: node-network-prod
+spec:
+  selector:
+    matchLabels:
+      app: node-tuner
+      pool: blue
+  template:
+    metadata:
+      labels:
+        app: node-tuner
+        pool: blue
+    spec:
+      containers:
+      - args:
+        - tuner
+        - --interface=eth0
+        - --mtu=1500
+        - --listen=:9102
+        image: ghcr.io/dhpup/case-file@sha256:814ead981b03a2b30f188b6799d18fe6f360672c9777d0080e916235498aa1e2
+        name: tuner
+        ports:
+        - containerPort: 9102
+          name: metrics
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: metrics
+        resources:
+          limits:
+            memory: 32Mi
+          requests:
+            cpu: 5m
+            memory: 16Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            add:
+            - NET_ADMIN
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: false
+          runAsUser: 0
+          seccompProfile:
+            type: RuntimeDefault
+      dnsPolicy: ClusterFirstWithHostNet
+      hostNetwork: true
+      nodeSelector:
+        pool: blue
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: 100%
