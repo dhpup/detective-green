@@ -21,7 +21,7 @@ spec:
       - args:
         - tuner
         - --interface=eth0
-        - --mtu=1500
+        - --mtu=1450
         - --listen=:9102
         image: ghcr.io/dhpup/case-file@sha256:814ead981b03a2b30f188b6799d18fe6f360672c9777d0080e916235498aa1e2
         name: tuner
