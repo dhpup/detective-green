@@ -1,0 +1,32 @@
+# One Argo CD Application per environment directory. Each tracks the RENDERED
+# branch rendered/case-file/<stage>, not main. Kargo creates and updates those
+# branches on promotion, then syncs the Application (argocd-update).
+# The env directory name is also the Argo CD cluster name.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: case-file
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+  - git:
+      repoURL: https://github.com/dhpup/detective-green.git
+      revision: HEAD
+      directories:
+      - path: apps/case-file/env/*
+  template:
+    metadata:
+      name: 'case-file-{{.path.basename}}'
+      annotations:
+        # Authorizes the matching Kargo Stage to update and sync this Application.
+        kargo.akuity.io/authorized-stage: 'case-file:{{.path.basename}}'
+    spec:
+      project: case-file
+      source:
+        repoURL: https://github.com/dhpup/detective-green.git
+        targetRevision: 'rendered/case-file/{{.path.basename}}'
+        path: ./
+      destination:
+        name: '{{.path.basename}}'

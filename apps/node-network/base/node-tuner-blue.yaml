@@ -1,0 +1,44 @@
+# node-tuner for the blue pool: declares this pool's underlay MTU.
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: node-tuner-blue
+  labels: {app: node-tuner, pool: blue}
+spec:
+  selector:
+    matchLabels: {app: node-tuner, pool: blue}
+  updateStrategy:
+    rollingUpdate: {maxUnavailable: 100%}  # config only; roll every node at once
+  template:
+    metadata:
+      labels: {app: node-tuner, pool: blue}
+    spec:
+      nodeSelector: {pool: blue}
+      hostNetwork: true  # manages the node's own eth0
+      dnsPolicy: ClusterFirstWithHostNet
+      containers:
+        - name: tuner
+          image: ghcr.io/dhpup/case-file
+          args:
+            - tuner
+            - --interface=eth0
+            - --mtu=1500
+            - --listen=:9102
+          ports:
+            - {name: metrics, containerPort: 9102}
+          readinessProbe:
+            httpGet: {path: /healthz, port: metrics}
+          resources:
+            requests: {cpu: 5m, memory: 16Mi}
+            limits: {memory: 32Mi}
+          securityContext:
+            # Root with NET_ADMIN only: setting an interface MTU needs the
+            # capability in the effective set, which a non-root user doesn't get.
+            runAsUser: 0
+            runAsNonRoot: false
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+              add: [NET_ADMIN]
+            seccompProfile: {type: RuntimeDefault}

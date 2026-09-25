@@ -1,0 +1,25 @@
+# Prometheus scrapes both roles. frontdesk's metrics carry the evidence:
+# case_file_upstream_tcp_retransmits_total{dst_node}.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: frontdesk
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  selector:
+    matchLabels: {app: frontdesk}
+  endpoints:
+    - {port: http, interval: 10s}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: evidence-locker
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  selector:
+    matchLabels: {app: evidence-locker}
+  endpoints:
+    - {port: http, interval: 10s}

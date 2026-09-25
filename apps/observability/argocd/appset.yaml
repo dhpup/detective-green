@@ -1,0 +1,52 @@
+# One Application per env/<cluster> directory. Three sources: the Helm chart
+# (pinned by version; must match KUBE_PROMETHEUS_STACK_CHART_VERSION in
+# versions.env), this repo's values files, and this repo's extra manifests.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: observability
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+  - git:
+      repoURL: https://github.com/dhpup/detective-green.git
+      revision: HEAD
+      directories:
+      - path: apps/observability/env/*
+  template:
+    metadata:
+      name: 'observability-{{.path.basename}}'
+    spec:
+      project: observability
+      sources:
+      - repoURL: https://prometheus-community.github.io/helm-charts
+        chart: kube-prometheus-stack
+        targetRevision: 91.5.2
+        helm:
+          releaseName: kps
+          valueFiles:
+          - $values/apps/observability/values.yaml
+          - '$values/apps/observability/env/{{.path.basename}}/values.yaml'
+      - repoURL: https://github.com/dhpup/detective-green.git
+        targetRevision: HEAD
+        ref: values
+      - repoURL: https://github.com/dhpup/detective-green.git
+        targetRevision: HEAD
+        path: apps/observability/manifests
+      destination:
+        name: '{{.path.basename}}'
+        namespace: observability
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        managedNamespaceMetadata:
+          labels:
+            # node-exporter needs hostNetwork/hostPID to read node counters,
+            # including eth0 drops (the gate's network signal).
+            pod-security.kubernetes.io/enforce: privileged
+        syncOptions:
+        - CreateNamespace=true
+        - ServerSideApply=true  # the operator's CRDs are too big for client-side apply

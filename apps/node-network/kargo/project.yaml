@@ -1,0 +1,22 @@
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Project
+metadata:
+  name: node-network
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: ProjectConfig
+metadata:
+  name: node-network
+  namespace: node-network
+spec:
+  promotionPolicies:
+    # "It's just platform config": both stages promote on their own. With no
+    # verification on staging, a bad commit reaches prod with nobody looking.
+    - stageSelector:
+        name: staging
+      autoPromotionEnabled: true
+    - stageSelector:
+        name: prod
+      autoPromotionEnabled: true

@@ -1,0 +1,19 @@
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Project
+metadata:
+  name: case-file
+  annotations:
+    # Sync before the other Kargo resources so the project namespace exists first.
+    argocd.argoproj.io/sync-wave: "-1"
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: ProjectConfig
+metadata:
+  name: case-file
+  namespace: case-file
+spec:
+  promotionPolicies:
+    # New Freight goes to staging on its own. Prod is promoted by a person.
+    - stageSelector:
+        name: staging
+      autoPromotionEnabled: true

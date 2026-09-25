@@ -1,0 +1,17 @@
+# Platform-owned. The only AppProject allowed cluster-scoped resources:
+# kube-prometheus-stack installs CRDs, ClusterRoles and a node-exporter DaemonSet.
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: observability
+  namespace: argocd
+spec:
+  description: kube-prometheus-stack in the workload clusters
+  sourceRepos:
+    - https://github.com/dhpup/detective-green.git
+    - https://prometheus-community.github.io/helm-charts
+  destinations:
+    - {name: staging, namespace: '*'}
+    - {name: prod, namespace: '*'}
+  clusterResourceWhitelist:
+    - {group: '*', kind: '*'}

@@ -1,0 +1,110 @@
+# kube-prometheus-stack, trimmed for a laptop: Prometheus, Grafana,
+# node-exporter and kube-state-metrics. No Alertmanager, no default alert
+# rules, no admission webhooks, no k3s control-plane scrapes (they aren't
+# exposed). Every image is pinned by digest below; hack/verify-pins.sh renders
+# this file and fails on anything unpinned.
+#
+# Chart version is pinned in argocd/appset.yaml and versions.env (CI checks
+# they match).
+
+# Predictable names: the Prometheus Service is kps-prometheus, Grafana is kps-grafana.
+fullnameOverride: kps
+
+crds:
+  enabled: true
+
+defaultRules:
+  create: false
+alertmanager:
+  enabled: false
+kubeEtcd:
+  enabled: false
+kubeControllerManager:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeProxy:
+  enabled: false
+
+prometheusOperator:
+  admissionWebhooks:
+    enabled: false
+    patch:
+      enabled: false
+  tls:
+    enabled: false
+  image:
+    sha: 7c88d4e7bae63bd8d0f8da986054337c23b4472fa8d3c6817f5bc4b8407a2d6a  # v0.94.1
+  prometheusConfigReloader:
+    image:
+      sha: 06b52bd4dbe3ed6dd5905aadaf8b9987d9da4c31d37bb86deaadae68cee2d26b  # v0.94.1
+
+prometheus:
+  service:
+    type: NodePort
+    nodePort: 30090  # Kargo's AnalysisRuns query staging's Prometheus here
+  prometheusSpec:
+    retention: 6h
+    scrapeInterval: 10s
+    # Pick up every ServiceMonitor/PodMonitor in the cluster, not only ones
+    # labelled for this Helm release.
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    resources:
+      requests: {cpu: 100m, memory: 256Mi}
+      limits: {memory: 768Mi}
+    image:
+      sha: 50c707e96da5ade383cb1707790576480485e93de06aa60ad8802cb5f744bd0a  # v3.14.0-distroless
+
+grafana:
+  service:
+    type: NodePort
+    nodePort: 30300  # k3d maps this to localhost:3001 (staging) / 3002 (prod)
+  # Local-only lab: anonymous read-only access, so the dashboards open without
+  # a login on stage. The admin password is generated into a Secret.
+  grafana.ini:
+    auth.anonymous:
+      enabled: true
+      org_role: Viewer
+  resources:
+    requests: {cpu: 50m, memory: 128Mi}
+    limits: {memory: 256Mi}
+  image:
+    sha: 69a5d2d957ca0bba434c160dcd4f2d07de9d6c756a0ba10ae7f52b72ced1e4cc  # 13.2.2-distroless
+  # No k8s-sidecar (a community image): the datasource and dashboards are
+  # provisioned from Grafana's own chart values instead.
+  defaultDashboardsEnabled: false
+  sidecar:
+    dashboards:
+      enabled: false
+    datasources:
+      enabled: false
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+        - name: Prometheus
+          type: prometheus
+          uid: prometheus
+          url: http://kps-prometheus.observability:9090
+          access: proxy
+          isDefault: true
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+        - name: detective
+          folder: The Case of the Green Dashboard
+          type: file
+          options:
+            path: /var/lib/grafana/dashboards/detective
+  # The "Precinct Board" dashboard arrives in Phase 5 as a ConfigMap here.
+  dashboardsConfigMaps: {}
+
+kube-state-metrics:
+  image:
+    sha: sha256:42cfe3723a5f058171c627537fb57a3ea0f26e4380fa18555a95cb1a1b4cfc5b  # v2.20.0 (this chart wants the prefix)
+
+prometheus-node-exporter:
+  image:
+    digest: sha256:8c9bac11973b94b59be88d6e11fee4429aa743c8846cdc75d65b18db33f6a106  # v1.12.1-distroless

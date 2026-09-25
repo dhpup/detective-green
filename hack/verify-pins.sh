@@ -28,6 +28,21 @@ if ! grep -q "^ARG GO_IMAGE=${GO_BUILD_IMAGE}\$" "$casefile" \
    || ! grep -q "^ARG BASE_IMAGE=${DISTROLESS_STATIC_IMAGE}\$" "$casefile"; then
   echo "  MISMATCH src/case-file/Dockerfile bases != versions.env"; fail=1
 fi
+# kube-prometheus-stack is installed by Argo CD: its version lives in the ApplicationSet too.
+appset_version="$(awk '/chart: kube-prometheus-stack/{getline; print $2}' "${ROOT}/apps/observability/argocd/appset.yaml")"
+[[ "$appset_version" == "$KUBE_PROMETHEUS_STACK_CHART_VERSION" ]] \
+  || { echo "  MISMATCH apps/observability/argocd/appset.yaml has ${appset_version}, versions.env has ${KUBE_PROMETHEUS_STACK_CHART_VERSION}"; fail=1; }
+
+# Our own manifests: render every apps/*/env/<stage> overlay and check the
+# images that would actually be deployed.
+for overlay in "${ROOT}"/apps/*/env/*/; do
+  [[ -f "${overlay}kustomization.yaml" ]] || continue
+  rel="${overlay#"${ROOT}"/}"
+  rendered="$(kubectl kustomize "$overlay")" || die "kustomize failed for ${rel}"
+  while IFS= read -r image; do
+    [[ -n "$image" ]] && check "$image" "${rel%/}"
+  done < <(grep -oE 'image: *"?[^" ]+' <<<"$rendered" | sed -E 's/image: *"?//' | sort -u)
+done
 for var in TRIVY_IMAGE GOLANGCI_LINT_IMAGE; do
   check "${!var}" "versions.env ${var}"
 done

@@ -1,0 +1,7 @@
+# Renamed to case-file-<stage> by each env overlay's `namespace:` setting.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: case-file
+  labels:
+    pod-security.kubernetes.io/enforce: restricted

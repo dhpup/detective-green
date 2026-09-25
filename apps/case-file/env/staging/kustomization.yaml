@@ -1,0 +1,9 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: case-file-staging
+resources:
+  - ../../base
+# Kargo's kustomize-set-image step writes the promoted image digest here.
+images:
+  - name: ghcr.io/dhpup/case-file
+    digest: sha256:814ead981b03a2b30f188b6799d18fe6f360672c9777d0080e916235498aa1e2  # v1.2.0

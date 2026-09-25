@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: informant
+  namespace: informant
+  labels: {app: informant}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: informant}
+  template:
+    metadata:
+      labels: {app: informant}
+    spec:
+      # On green, so its own hop to frontdesk (also on green) is never the
+      # broken one: what it measures is frontdesk's hop to the API.
+      nodeSelector: {pool: green}
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: informant
+          image: ghcr.io/dhpup/case-file
+          args: [informant, -target, http://frontdesk.case-file.svc.cluster.local:8080]
+          ports:
+            - {name: metrics, containerPort: 9090}
+          readinessProbe:
+            httpGet: {path: /healthz, port: metrics}
+          resources:
+            requests: {cpu: 10m, memory: 16Mi}
+            limits: {memory: 64Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}

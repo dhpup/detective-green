@@ -1,0 +1,20 @@
+# Scrapes Hubble's flow metrics (drops, TCP flags, flows) from every Cilium
+# agent. Cilium is installed before Prometheus, so this lives here rather than
+# in the Cilium chart. Hubble reports FORWARDED for the black hole, which is
+# red herring #2; its drop metric still catches the warm-up case (Plot B).
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: hubble
+  namespace: observability
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  namespaceSelector:
+    matchNames: [kube-system]
+  selector:
+    matchLabels:
+      k8s-app: hubble
+  endpoints:
+    - port: hubble-metrics
+      interval: 10s

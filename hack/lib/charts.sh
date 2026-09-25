@@ -12,6 +12,9 @@ chart_path() {
     argo-rollouts) fetch_chart argo-rollouts "$ROLLOUTS_CHART_REPO" "$ROLLOUTS_CHART_VERSION" "$ROLLOUTS_CHART_SHA256" ;;
     argo-cd)       fetch_chart argo-cd "$ARGOCD_CHART_REPO" "$ARGOCD_CHART_VERSION" "$ARGOCD_CHART_SHA256" ;;
     kargo)         fetch_chart kargo "$KARGO_CHART_OCI" "$KARGO_CHART_VERSION" "$KARGO_CHART_SHA256" ;;
+    kube-prometheus-stack)
+      fetch_chart kube-prometheus-stack "$KUBE_PROMETHEUS_STACK_CHART_REPO" \
+        "$KUBE_PROMETHEUS_STACK_CHART_VERSION" "$KUBE_PROMETHEUS_STACK_CHART_SHA256" ;;
     *) die "unknown chart $1" ;;
   esac
 }
@@ -44,11 +47,13 @@ chart_args() {
       printf '%s\n' --values "${ROOT}/hack/values/kargo.yaml" \
         --set "image.repository=$(image_repo "$KARGO_IMAGE")" \
         --set "image.tag=$(image_tag "$KARGO_IMAGE")" ;;
+    kube-prometheus-stack) # installed by Argo CD; rendered here only for checks
+      printf '%s\n' --values "${ROOT}/apps/observability/values.yaml" ;;
     *) die "unknown chart $1" ;;
   esac
 }
 
-CHARTS=(cilium cert-manager argo-rollouts argo-cd kargo)
+CHARTS=(cilium cert-manager argo-rollouts argo-cd kargo kube-prometheus-stack)
 
 # rendered_images <chart>: every image the chart would deploy, as rendered.
 # Placeholders only satisfy settings the install scripts pass at install time;
@@ -62,7 +67,9 @@ rendered_images() {
     kargo)  args+=(--set api.adminAccount.passwordHash=render-only --set api.adminAccount.tokenSigningKey=render-only) ;;
   esac
   out="$(helm template x "$(chart_path "$1")" "${args[@]}")" || die "helm template failed for $1"
-  out="$(grep -oE 'image: *"?[^" ]+' <<<"$out" | sed -E 's/image: *"?//' | sort -u)"
+  # The Prometheus operator passes the config-reloader image as a flag.
+  out="$(grep -oE '(image: *"?[^" ]+|--prometheus-config-reloader=[^" ]+)' <<<"$out" \
+    | sed -E 's/image: *"?//; s/--prometheus-config-reloader=//' | sort -u)"
   [[ -n "$out" ]] || die "chart $1 rendered no images"
   echo "$out"
 }

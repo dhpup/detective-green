@@ -1,0 +1,62 @@
+# The rendered-manifests promotion (from akp-platform's guestbook-rendered):
+# main holds the Kustomize sources; every promotion renders the stage's
+# overlay and force-pushes the plain YAML to rendered/case-file/<stage>.
+apiVersion: kargo.akuity.io/v1alpha1
+kind: PromotionTask
+metadata:
+  name: promote
+  namespace: case-file
+spec:
+  vars:
+  - name: repoURL
+    value: https://github.com/dhpup/detective-green.git
+  - name: image
+    value: ghcr.io/dhpup/case-file
+  steps:
+  # Sources at the exact commit from the Freight to ./src, and the rendered
+  # branch to ./out (created on first promotion).
+  - uses: git-clone
+    config:
+      repoURL: ${{ vars.repoURL }}
+      checkout:
+      - commit: ${{ commitFrom(vars.repoURL).ID }}
+        path: ./src
+      - branch: rendered/case-file/${{ ctx.stage }}
+        path: ./out
+        create: true
+  # Start from a clean slate so the branch only ever holds freshly rendered output.
+  - uses: git-clear
+    config:
+      path: ./out
+  # Pin the image by the digest recorded in the Freight (not a mutable tag).
+  - uses: kustomize-set-image
+    as: update-image
+    config:
+      path: ./src/apps/case-file/env/${{ ctx.stage }}
+      images:
+      - image: ${{ vars.image }}
+        digest: ${{ imageFrom(vars.image).Digest }}
+  - uses: kustomize-build
+    config:
+      path: ./src/apps/case-file/env/${{ ctx.stage }}
+      outPath: ./out
+  - uses: git-commit
+    as: commit
+    config:
+      path: ./out
+      message: |-
+        case-file ${{ imageFrom(vars.image).Tag }} to ${{ ctx.stage }}
+
+        ${{ task.outputs['update-image'].commitMessage }}
+        Source: ${{ commitFrom(vars.repoURL).ID }}
+  - uses: git-push
+    config:
+      path: ./out
+  # Point the Argo CD Application at the new commit and sync it.
+  - uses: argocd-update
+    config:
+      apps:
+      - name: case-file-${{ ctx.stage }}
+        sources:
+        - repoURL: ${{ vars.repoURL }}
+          desiredRevision: ${{ task.outputs['commit'].commit }}

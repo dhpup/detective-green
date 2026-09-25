@@ -12,3 +12,6 @@
 *.swp
 .idea/
 .vscode/
+
+# Python bytecode (hack/lib/oci.py)
+__pycache__/

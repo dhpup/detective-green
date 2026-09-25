@@ -42,6 +42,18 @@ jobs:
       - name: Verify chart digests and image pins
         run: hack/verify-pins.sh
 
+  manifests:
+    # Renders every overlay and validates all manifests (core kinds and our
+    # CRDs) with kubeconform -strict.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Validate manifests
+        run: hack/validate.sh
+
   go:
     runs-on: ubuntu-24.04
     timeout-minutes: 15

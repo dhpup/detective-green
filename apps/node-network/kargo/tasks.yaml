@@ -1,0 +1,48 @@
+# Rendered-manifests promotion for node-network. Same shape as case-file's,
+# minus the image step. The rendered commit carries the source commit's
+# message, so `git log rendered/node-network/prod` shows who changed what
+# (the Chapter 5 reveal).
+apiVersion: kargo.akuity.io/v1alpha1
+kind: PromotionTask
+metadata:
+  name: promote
+  namespace: node-network
+spec:
+  vars:
+  - name: repoURL
+    value: https://github.com/dhpup/detective-green.git
+  steps:
+  - uses: git-clone
+    config:
+      repoURL: ${{ vars.repoURL }}
+      checkout:
+      - commit: ${{ commitFrom(vars.repoURL).ID }}
+        path: ./src
+      - branch: rendered/node-network/${{ ctx.stage }}
+        path: ./out
+        create: true
+  - uses: git-clear
+    config:
+      path: ./out
+  - uses: kustomize-build
+    config:
+      path: ./src/apps/node-network/env/${{ ctx.stage }}
+      outPath: ./out
+  - uses: git-commit
+    as: commit
+    config:
+      path: ./out
+      message: |-
+        ${{ commitFrom(vars.repoURL).Message }}
+
+        Rendered node-network for ${{ ctx.stage }} from ${{ commitFrom(vars.repoURL).ID }}
+  - uses: git-push
+    config:
+      path: ./out
+  - uses: argocd-update
+    config:
+      apps:
+      - name: node-network-${{ ctx.stage }}
+        sources:
+        - repoURL: ${{ vars.repoURL }}
+          desiredRevision: ${{ task.outputs['commit'].commit }}

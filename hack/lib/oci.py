@@ -68,8 +68,15 @@ def fetch(registry, repo, path, headers, method="GET"):
 
 def digest(ref):
     registry, repo, tag = split_ref(ref)
-    with fetch(registry, repo, f"manifests/{tag}", {"Accept": ACCEPT}, method="HEAD") as resp:
-        return resp.headers["Docker-Content-Digest"]
+    try:
+        with fetch(registry, repo, f"manifests/{tag}", {"Accept": ACCEPT}, method="HEAD") as resp:
+            return resp.headers["Docker-Content-Digest"]
+    except urllib.error.HTTPError as err:
+        if err.code != 405:  # some registries (registry.k8s.io) don't allow HEAD
+            raise
+    with fetch(registry, repo, f"manifests/{tag}", {"Accept": ACCEPT}) as resp:
+        body = resp.read()
+        return resp.headers.get("Docker-Content-Digest") or "sha256:" + hashlib.sha256(body).hexdigest()
 
 
 def pull_chart(repo_ref, version, want, out):

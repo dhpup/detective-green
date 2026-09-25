@@ -1,0 +1,62 @@
+# The API. Two replicas, one per node pool, so some requests land on blue.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: evidence-locker
+  labels: {app: evidence-locker}
+spec:
+  replicas: 2
+  selector:
+    matchLabels: {app: evidence-locker}
+  template:
+    metadata:
+      labels: {app: evidence-locker}
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions: [{key: pool, operator: Exists}]
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: pool
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels: {app: evidence-locker}
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: evidence-locker
+          image: ghcr.io/dhpup/case-file
+          args: [evidence-locker]
+          env:
+            - name: NODE_NAME  # stamped on every response as X-Node
+              valueFrom:
+                fieldRef: {fieldPath: spec.nodeName}
+          ports:
+            - {name: http, containerPort: 8080}
+          # Tiny health check: the reason the dashboard stays green.
+          readinessProbe:
+            httpGet: {path: /healthz, port: http}
+          livenessProbe:
+            httpGet: {path: /healthz, port: http}
+          resources:
+            requests: {cpu: 10m, memory: 32Mi}
+            limits: {memory: 128Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+---
+# Headless: frontdesk resolves it to pod IPs and picks one per request.
+apiVersion: v1
+kind: Service
+metadata:
+  name: evidence-locker-headless
+  labels: {app: evidence-locker}
+spec:
+  clusterIP: None
+  selector: {app: evidence-locker}
+  ports:
+    - {name: http, port: 8080}

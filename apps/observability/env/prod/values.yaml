@@ -1,0 +1,5 @@
+# prod-specific overrides for kube-prometheus-stack.
+prometheus:
+  prometheusSpec:
+    externalLabels:
+      cluster: prod

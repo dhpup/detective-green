@@ -1,0 +1,17 @@
+# Convention: the AppProject name matches the app directory and the Kargo
+# Project. Scoped to this repo, this app's namespaces, and the Kargo Project.
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: case-file
+  namespace: argocd
+spec:
+  description: The victim app (frontdesk + evidence-locker), promoted by Kargo
+  sourceRepos: [https://github.com/dhpup/detective-green.git]
+  destinations:
+    - {name: staging, namespace: case-file-staging}
+    - {name: prod, namespace: case-file-prod}
+    - {name: kargo, namespace: case-file}  # the Kargo Project's resources
+  clusterResourceWhitelist:
+    - {group: '', kind: Namespace}
+    - {group: kargo.akuity.io, kind: Project}

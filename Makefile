@@ -43,6 +43,10 @@ test: ## Go vet, tests (with -race), golangci-lint and govulncheck, in pinned co
 images: ## Build our images locally (case-file, evidence-kit) and scan them
 	@hack/images.sh
 
+.PHONY: validate
+validate: ## Render every overlay and validate all manifests with kubeconform
+	@hack/validate.sh
+
 .PHONY: lint
 lint: ## Run every pre-commit hook (in a container; no local installs needed)
 	@hack/lint.sh

@@ -1,0 +1,8 @@
+# Renamed to node-network-<stage> by each env overlay.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: node-network
+  labels:
+    # node-tuner needs hostNetwork + NET_ADMIN. Only this namespace allows it.
+    pod-security.kubernetes.io/enforce: privileged

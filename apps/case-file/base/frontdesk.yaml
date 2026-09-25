@@ -1,0 +1,47 @@
+# The frontend. On green; the black hole is its hop to the API pod on blue.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontdesk
+  labels: {app: frontdesk}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: frontdesk}
+  template:
+    metadata:
+      labels: {app: frontdesk}
+    spec:
+      nodeSelector: {pool: green}
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: frontdesk
+          image: ghcr.io/dhpup/case-file
+          args: [frontdesk, -api-host, evidence-locker-headless]
+          ports:
+            - {name: http, containerPort: 8080}
+          readinessProbe:
+            httpGet: {path: /healthz, port: http}
+          livenessProbe:
+            httpGet: {path: /healthz, port: http}
+          resources:
+            requests: {cpu: 10m, memory: 32Mi}
+            limits: {memory: 128Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+---
+# NodePort 30080: the gate's sweep Job (in mgmt) comes in here over the k3d network.
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontdesk
+  labels: {app: frontdesk}
+spec:
+  type: NodePort
+  selector: {app: frontdesk}
+  ports:
+    - {name: http, port: 8080, nodePort: 30080}

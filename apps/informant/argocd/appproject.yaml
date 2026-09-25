@@ -1,0 +1,13 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: informant
+  namespace: argocd
+spec:
+  description: Continuous prober ("the city") in the workload clusters
+  sourceRepos: [https://github.com/dhpup/detective-green.git]
+  destinations:
+    - {name: staging, namespace: informant}
+    - {name: prod, namespace: informant}
+  clusterResourceWhitelist:
+    - {group: '', kind: Namespace}

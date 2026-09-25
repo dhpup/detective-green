@@ -1,0 +1,16 @@
+# Platform-owned. Scoped to this repo, this app's namespaces, and the Kargo Project.
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: node-network
+  namespace: argocd
+spec:
+  description: Platform node network config (node-tuner), promoted by Kargo
+  sourceRepos: [https://github.com/dhpup/detective-green.git]
+  destinations:
+    - {name: staging, namespace: node-network-staging}
+    - {name: prod, namespace: node-network-prod}
+    - {name: kargo, namespace: node-network}  # the Kargo Project's resources
+  clusterResourceWhitelist:
+    - {group: '', kind: Namespace}
+    - {group: kargo.akuity.io, kind: Project}

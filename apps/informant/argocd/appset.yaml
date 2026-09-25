@@ -1,0 +1,31 @@
+# One Application per env/<cluster> directory, synced from main (no Kargo).
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: informant
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+  - git:
+      repoURL: https://github.com/dhpup/detective-green.git
+      revision: HEAD
+      directories:
+      - path: apps/informant/env/*
+  template:
+    metadata:
+      name: 'informant-{{.path.basename}}'
+    spec:
+      project: informant
+      source:
+        repoURL: https://github.com/dhpup/detective-green.git
+        targetRevision: HEAD
+        path: '{{.path.path}}'
+      destination:
+        name: '{{.path.basename}}'
+        namespace: informant
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true

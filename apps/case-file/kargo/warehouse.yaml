@@ -1,0 +1,24 @@
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Warehouse
+metadata:
+  name: case-file
+  namespace: case-file
+spec:
+  # How often to look for new images and commits. Scenes also refresh on demand.
+  interval: 1m0s
+  subscriptions:
+  # New semver tags of the app image produce new Freight. The Freight records
+  # the digest, and promotions pin that digest in the rendered manifests.
+  - image:
+      repoURL: ghcr.io/dhpup/case-file
+      imageSelectionStrategy: SemVer
+      allowTagsRegexes:
+      - ^v[0-9]+\.[0-9]+\.[0-9]+$
+  # Changes to this app's manifests on main also produce new Freight. Scoped
+  # with includePaths so promotions (which push rendered/* branches) and other
+  # apps' changes never trigger this Warehouse.
+  - git:
+      repoURL: https://github.com/dhpup/detective-green.git
+      branch: main
+      includePaths:
+      - apps/case-file

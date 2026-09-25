@@ -1,0 +1,16 @@
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Warehouse
+metadata:
+  name: node-network
+  namespace: node-network
+spec:
+  # How often to look for new images and commits. Scenes also refresh on demand.
+  interval: 1m0s
+  subscriptions:
+  # Git only: node-tuner's image is pinned by digest in the base, so case-file
+  # releases don't create node-network Freight.
+  - git:
+      repoURL: https://github.com/dhpup/detective-green.git
+      branch: main
+      includePaths:
+      - apps/node-network
