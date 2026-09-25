@@ -25,9 +25,16 @@ platform_commit "platform: pin node-tuner MTU to 1500 on both pools"
 push_live
 base="$(git_scene rev-parse HEAD)"
 log "live = main + baseline ${base:0:7}"
-# kargo-apps tracks live: make Argo CD drop any Chapter 6 gate right away.
+# kargo-apps tracks live: make Argo CD drop any Chapter 6 gate right away, and
+# wait until it has. Otherwise the baseline would still have to pass the gate.
 refresh_app kargo-node-network
 refresh_app kargo-case-file
+for _ in $(seq 1 60); do
+  gate="$(kubectl --context "$(ctx mgmt)" -n node-network get stage staging -o jsonpath='{.spec.verification}')"
+  [[ -z "$gate" ]] && break
+  sleep 2
+done
+[[ -z "$gate" ]] || die "node-network staging still has the Chapter 6 gate (Argo CD hasn't synced live yet)"
 
 say "2/3  Baseline: node-network at MTU 1500, case-file v1.3.0"
 refresh_warehouse node-network
