@@ -17,7 +17,14 @@ spec:
       steps:
       - task:
           name: promote
-  # No verification: that is the 2am state. The Chapter 6 PR adds it.
+  # Platform changes are app changes: node config has to pass the same checks
+  # as the app before it can reach prod.
+  verification:
+    analysisTemplates:
+    - kind: ClusterAnalysisTemplate
+      name: payload-sweep
+    - kind: ClusterAnalysisTemplate
+      name: network-signals
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
