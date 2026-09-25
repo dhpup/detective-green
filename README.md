@@ -41,7 +41,7 @@ self-signed certificates and listen on localhost only:
 hack/personalize.sh <your-github-user>   # rewrites repo URLs and image owners
 git commit -am "personalize" && git push
 make up bootstrap
-GITHUB_USER=<you> GITHUB_TOKEN=<fine-grained token> make credentials
+GITHUB_USER=<you> make credentials   # prompts for a fine-grained token
 ```
 
 Use a fine-grained GitHub token scoped to your fork only, with *Contents: read

@@ -21,7 +21,7 @@ bootstrap: ## Apply the root app-of-apps (after this repo is pushed to GitHub)
 	kubectl --context k3d-mgmt apply -f bootstrap/platform-aoa.yaml
 
 .PHONY: credentials
-credentials: ## Give each Kargo Project git credentials (GITHUB_USER, GITHUB_TOKEN)
+credentials: ## Give each Kargo Project git credentials (GITHUB_USER; prompts for the token)
 	@hack/add-credentials.sh
 
 .PHONY: status
