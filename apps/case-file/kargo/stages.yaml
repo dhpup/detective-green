@@ -17,7 +17,16 @@ spec:
       steps:
       - task:
           name: promote
-  # Verification (the gate) arrives in Phase 4.
+  # The gate: Freight only becomes eligible for prod after these pass. The
+  # checks are shared ClusterAnalysisTemplates (kargo-shared/): a payload sweep
+  # through the app, plus what staging's network says (eth0 drops, large-payload
+  # success, policy drops).
+  verification:
+    analysisTemplates:
+    - kind: ClusterAnalysisTemplate
+      name: payload-sweep
+    - kind: ClusterAnalysisTemplate
+      name: network-signals
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage

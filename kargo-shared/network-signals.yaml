@@ -1,0 +1,57 @@
+# The detective's second check: what the network itself says, from staging's
+# Prometheus. The queries wait (initialDelay) until the payload sweep has run,
+# and look back far enough to include it.
+#
+#   interface-drops        eth0 receive drops + errors on any node must be 0.
+#                          Zero when healthy; only the blue node moves during
+#                          the black hole. Errors too: on real NICs, MTU drops
+#                          often show up as length errors.
+#   large-payload-success  the informant's large requests must succeed >= 99%.
+#   policy-drops           Hubble POLICY_DENIED drops must be 0. Hubble can't
+#                          see the MTU black hole (it reports FORWARDED), but
+#                          this catches the warm-up case (a policy drop).
+#                          Other Hubble drop reasons are k3d background noise.
+apiVersion: argoproj.io/v1alpha1
+kind: ClusterAnalysisTemplate
+metadata:
+  name: network-signals
+spec:
+  args:
+    - name: prometheus
+      value: http://k3d-staging-server-0:30090
+  metrics:
+    - name: interface-drops
+      initialDelay: 75s
+      count: 1
+      failureLimit: 0
+      successCondition: result[0] == 0
+      provider:
+        prometheus:
+          address: "{{args.prometheus}}"
+          query: |
+            sum(
+              increase(node_network_receive_drop_total{device="eth0"}[3m])
+              + increase(node_network_receive_errs_total{device="eth0"}[3m])
+            )
+    - name: large-payload-success
+      initialDelay: 75s
+      count: 1
+      failureLimit: 0
+      successCondition: result[0] >= 0.99
+      provider:
+        prometheus:
+          address: "{{args.prometheus}}"
+          query: |
+            sum(rate(case_file_probe_requests_total{result="ok", size_bucket="large"}[2m]))
+            /
+            sum(rate(case_file_probe_requests_total{size_bucket="large"}[2m]))
+    - name: policy-drops
+      initialDelay: 75s
+      count: 1
+      failureLimit: 0
+      successCondition: result[0] == 0
+      provider:
+        prometheus:
+          address: "{{args.prometheus}}"
+          query: |
+            sum(rate(hubble_drop_total{reason="POLICY_DENIED"}[2m])) or vector(0)

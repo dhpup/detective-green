@@ -102,6 +102,9 @@ Why: in native mode, blue's own kernel routes the pod's traffic out through the 
 
 **Decision: the demo stays on VXLAN.** It gives a hard, repeatable black hole for uploads no matter what traffic came first. Native routing is still a good line for Christian: *"in native mode this particular break would half-heal itself; with a tunnel, nothing tells the pod."* After this test the cluster went back to VXLAN, and `reliability.sh 5` passed 5/5 with offload off everywhere.
 
+### 7. Only a steady MTU gives a steady black hole
+While testing the gate (Phase 4), forcing blue's MTU with a loop (`ip link set ... mtu 1450` every second) while node-tuner reset it to 1500 every 30 s made the black hole erratic: some sweeps lost 0 of 12 large uploads to blue, others 8. With node-tuner itself holding 1450 (what the culprit does), every upload to blue failed, 13 of 13 across three sweeps, and the gate failed 10/10. **Always break the node through node-tuner, never by racing it.**
+
 ## Still to test
 - [x] Native routing mode (instead of VXLAN). See finding 6.
 - [x] A capture on the blue node's `eth0` at the same time, to show the segment never arrives. During one failing sweep, green's `eth0` sent **3,861** full-size (≥1480-byte) VXLAN frames and blue's `eth0` received **0**. Files: `evidence/phase0-pair-sender-green-eth0.pcap` and `evidence/phase0-pair-receiver-blue-eth0.pcap`. This is the "it left the sender and never reached the receiver" beat for Chapter 4.

@@ -1,0 +1,44 @@
+# The detective's first check: send realistic payloads through the app the way
+# users do. Every size in 1K..4M, as a download and an upload, 4 times each so
+# requests land on API pods on every node. Fails if any request fails, and the
+# Job's log carries frontdesk's evidence (node + TCP retransmits) for each one.
+#
+# Runs as a Job in the Kargo control-plane cluster (the Project's namespace)
+# and reaches staging's frontdesk over the k3d network. The frontdesk ->
+# evidence-locker hop it exercises is still cross-node, which is where the
+# black hole is.
+apiVersion: argoproj.io/v1alpha1
+kind: ClusterAnalysisTemplate
+metadata:
+  name: payload-sweep
+spec:
+  args:
+    - name: target
+      value: http://k3d-staging-agent-0:30080
+  metrics:
+    - name: payload-sweep
+      count: 1
+      failureLimit: 0
+      provider:
+        job:
+          spec:
+            backoffLimit: 0
+            activeDeadlineSeconds: 300
+            ttlSecondsAfterFinished: 3600
+            template:
+              spec:
+                restartPolicy: Never
+                securityContext:
+                  runAsNonRoot: true
+                  seccompProfile: {type: RuntimeDefault}
+                containers:
+                  - name: sweep
+                    image: ghcr.io/dhpup/case-file@sha256:814ead981b03a2b30f188b6799d18fe6f360672c9777d0080e916235498aa1e2  # v1.2.0
+                    args: [sweep, -target, "{{args.target}}", -sizes, "1K,16K,64K,256K,1M,4M", -attempts, "4"]
+                    resources:
+                      requests: {cpu: 10m, memory: 32Mi}
+                      limits: {memory: 128Mi}
+                    securityContext:
+                      allowPrivilegeEscalation: false
+                      readOnlyRootFilesystem: true
+                      capabilities: {drop: [ALL]}
