@@ -66,9 +66,11 @@ grafana:
     auth.anonymous:
       enabled: true
       org_role: Viewer
+  # Grafana 13 needs headroom: at a 256Mi limit it garbage-collected nonstop,
+  # burned several cores and failed its 1s health checks.
   resources:
-    requests: {cpu: 50m, memory: 128Mi}
-    limits: {memory: 256Mi}
+    requests: {cpu: 50m, memory: 256Mi}
+    limits: {memory: 512Mi}
   image:
     sha: 69a5d2d957ca0bba434c160dcd4f2d07de9d6c756a0ba10ae7f52b72ced1e4cc  # 13.2.2-distroless
   # No k8s-sidecar (a community image): the datasource and dashboards are
@@ -89,17 +91,8 @@ grafana:
           url: http://kps-prometheus.observability:9090
           access: proxy
           isDefault: true
-  dashboardProviders:
-    dashboardproviders.yaml:
-      apiVersion: 1
-      providers:
-        - name: detective
-          folder: The Case of the Green Dashboard
-          type: file
-          options:
-            path: /var/lib/grafana/dashboards/detective
-  # The "Precinct Board" dashboard arrives in Phase 5 as a ConfigMap here.
-  dashboardsConfigMaps: {}
+  # The "Precinct Board" dashboard arrives in Phase 5, together with its
+  # dashboardProviders entry and a dashboardsConfigMaps mount.
 
 kube-state-metrics:
   image:
