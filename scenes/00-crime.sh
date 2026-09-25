@@ -39,8 +39,11 @@ log "node-network ${nn_base:0:7} in staging and prod; blue nodes at MTU 1500"
 
 # case-file staging auto-promotes the newest Freight; prod is promoted by hand,
 # and only takes Freight that passed staging's gate.
+# The Warehouse only sees commits that touch apps/case-file (includePaths),
+# so the Freight's commit is the newest of those, not the tip of live.
 refresh_warehouse case-file
-cf="$(freight_for case-file "$base" v1.3.0)"
+cf_commit="$(git_scene log -1 --format=%H -- apps/case-file)"
+cf="$(freight_for case-file "$cf_commit" v1.3.0)"
 wait_on_stage case-file staging "$cf"
 wait_verified case-file "$cf" staging 240 || die "case-file ${cf:0:7} failed verification in staging"
 promote case-file prod "$cf"
@@ -60,6 +63,13 @@ wait_on_stage node-network staging "$nn_bad"
 wait_on_stage node-network prod "$nn_bad"
 for n in staging-agent-1 prod-agent-1; do wait_mtu "$n" 1450; done
 log "node-network ${nn_bad:0:7} auto-promoted to staging and prod; blue nodes at MTU 1450"
+
+# Wait for Argo CD to finish rolling node-tuner out, so the table is all green.
+for _ in $(seq 1 30); do
+  kubectl --context "$(ctx mgmt)" -n argocd get applications --no-headers \
+    | awk '$1 ~ /^(case-file|node-network|informant)-/ && ($2 != "Synced" || $3 != "Healthy")' | grep -q . || break
+  sleep 2
+done
 
 say "It's 2am. ($(( $(date +%s) - start ))s)"
 kubectl --context "$(ctx mgmt)" -n argocd get applications -o custom-columns='APP:.metadata.name,SYNC:.status.sync.status,HEALTH:.status.health.status' \
