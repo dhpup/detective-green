@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"flag"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
 	"strconv"
@@ -34,6 +35,7 @@ func runEvidenceLocker(args []string) error {
 		requests: newCounter("api_requests_total", "Requests served by evidence-locker.", "method", "size_bucket", "code"),
 	}
 	reg.MustRegister(e.requests)
+	slog.Info("upload handler: streaming uploads enabled", "max_bytes", maxPayload)
 	return serve(*listen, e.routes(), reg)
 }
 

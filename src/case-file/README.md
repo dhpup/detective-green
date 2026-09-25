@@ -27,12 +27,13 @@ a pod IP, one fresh connection per request. That lets it:
 A failed upload comes back as a 504 carrying that evidence:
 
 ```
-504 upstream evidence-locker 10.42.1.93 on node k3d-staging-agent-1 failed after 4.007s:
-Post "http://10.42.1.93:8080/api/evidence": context deadline exceeded (5 TCP retransmits)
+504 upload handler timed out: evidence-locker 10.42.1.93 on node k3d-staging-agent-1 did not finish
+after 4.007s: Post "http://10.42.1.93:8080/api/evidence": context deadline exceeded (5 TCP retransmits)
 ```
 
 The sweep prints that message as-is, so the gate's log shows the same
-retransmits you'd find in a pcap.
+retransmits you'd find in a pcap. (The "upload handler" wording arrived in
+v1.3.0 and is a deliberate red herring: it reads like the app's fault.)
 
 ## Metrics
 

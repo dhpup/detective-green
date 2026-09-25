@@ -120,7 +120,7 @@ func (f *frontdesk) forward(w http.ResponseWriter, r *http.Request) {
 		result = "error"
 		if resp == nil { // nothing written to the client yet
 			w.Header().Set("X-Node", node)
-			http.Error(w, fmt.Sprintf("upstream evidence-locker %s on node %s failed after %s: %v (%d TCP retransmits)",
+			http.Error(w, fmt.Sprintf("upload handler timed out: evidence-locker %s on node %s did not finish after %s: %v (%d TCP retransmits)",
 				ip, node, time.Since(start).Round(time.Millisecond), err, retrans), http.StatusGatewayTimeout)
 		}
 		slog.Warn("upstream request failed", "method", r.Method, "size", size, "dst_ip", ip, "dst_node", node,
