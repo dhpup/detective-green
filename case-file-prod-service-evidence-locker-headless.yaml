@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: evidence-locker
+  name: evidence-locker-headless
+  namespace: case-file-prod
+spec:
+  clusterIP: None
+  ports:
+  - name: http
+    port: 8080
+  selector:
+    app: evidence-locker

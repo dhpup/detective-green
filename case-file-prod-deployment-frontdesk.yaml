@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: frontdesk
+  name: frontdesk
+  namespace: case-file-prod
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontdesk
+  template:
+    metadata:
+      labels:
+        app: frontdesk
+    spec:
+      containers:
+      - args:
+        - frontdesk
+        - -api-host
+        - evidence-locker-headless
+        image: ghcr.io/dhpup/case-file@sha256:4edf1278046a71cf8af1bde3e673cd3fd0ba7efbfe03316f4c9b3d8a5daac4aa
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: http
+        name: frontdesk
+        ports:
+        - containerPort: 8080
+          name: http
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: http
+        resources:
+          limits:
+            memory: 128Mi
+          requests:
+            cpu: 10m
+            memory: 32Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+      nodeSelector:
+        pool: green
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
