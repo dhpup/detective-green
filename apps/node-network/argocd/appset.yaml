@@ -30,3 +30,4 @@ spec:
         path: ./
       destination:
         name: '{{.path.basename}}'
+        namespace: 'node-network-{{.path.basename}}'

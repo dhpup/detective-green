@@ -36,11 +36,13 @@ spec:
         path: '{{.path.path}}'
         directory:
           recurse: true
+      # The namespace is the Kargo Project's own, so AppProjects can scope
+      # destinations tightly. Deliberately no CreateNamespace (unlike
+      # akp-platform): the Kargo Project creates and labels its namespace.
       destination:
         name: kargo
+        namespace: '{{index .path.segments 1}}'
       syncPolicy:
         automated:
           prune: true
           selfHeal: true
-        syncOptions:
-        - CreateNamespace=true
