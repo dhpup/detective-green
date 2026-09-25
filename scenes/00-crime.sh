@@ -3,7 +3,8 @@
 # This is `make reset`. Safe to run any number of times.
 #
 #   1. Rebuild the `live` branch from main (drops the last run's culprit, fix
-#      and Chapter 6 gate merge), plus a baseline platform commit. Kargo
+#      and Chapter 6 gate merge), plus a baseline platform commit, and start
+#      node-network's rendered branches afresh. Kargo
 #      auto-promotes the NEWEST Freight, so each reset needs fresh Freight that
 #      is newer than the last run's culprit. The commit only touches
 #      apps/node-network/CHANGELOG.md, which isn't rendered.
@@ -20,6 +21,12 @@ start=$(date +%s)
 say "1/3  Rebuilding live from main"
 scene_repo
 git_scene checkout -q -B live origin/main
+# Start node-network's rendered history fresh, so Chapter 5's `git log` shows
+# tonight's story (baseline, then the culprit), not every rehearsal. Kargo
+# recreates the branches on the next promotion.
+for stage in staging prod; do
+  git_scene push -q origin --delete "rendered/node-network/${stage}" 2>/dev/null || true
+done
 changelog "node-tuner: green and blue pools at MTU 1500"
 platform_commit "platform: pin node-tuner MTU to 1500 on both pools"
 push_live
@@ -40,6 +47,7 @@ say "2/3  Baseline: node-network at MTU 1500, case-file v1.3.0"
 refresh_warehouse node-network
 nn_base="$(freight_for node-network "$base")"
 promote node-network staging "$nn_base"
+wait_verified node-network "$nn_base" staging 120 || die "node-network ${nn_base:0:7} never verified in staging"
 promote node-network prod "$nn_base"
 for n in staging-agent-1 prod-agent-1; do wait_mtu "$n" 1500; done
 log "node-network ${nn_base:0:7} in staging and prod; blue nodes at MTU 1500"

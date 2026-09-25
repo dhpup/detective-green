@@ -34,13 +34,29 @@ newest node-network Freight is the culprit, so simply promoting an older
 "good" Freight would be undone straight away. Instead, each reset adds a
 baseline commit on `live` ("platform: pin node-tuner MTU to 1500 on both
 pools"). That becomes the newest Freight, and the culprit, fix and re-push
-that follow are each newer again. The commits only touch node-tuner and
+that follow are each newer again. The reset also waits for Argo CD to remove
+the Chapter 6 gate from `live` before promoting, and waits for each Freight to
+be verified upstream before promoting it downstream. The commits only touch node-tuner and
 `apps/node-network/CHANGELOG.md` (which isn't rendered).
 
 ## Timings (measured on OrbStack)
 
-See the table at the end of Phase 5 in the build plan; `make reset` takes a
-few minutes, most of it case-file's first verification after `main` changes.
+A full rehearsal cycle, run end to end by script:
+
+| Step | Time |
+|---|---|
+| `make reset` (from the 2am state) | 92 s |
+| `make scene-5` | 2 s |
+| `make scene-5-fix` | 36 s |
+| `make scene-6` (gate merge, re-push, verification fails, prod refuses) | 78 s |
+| `make reset` (from after scene 6) | 63 s |
+
+The first reset after `main` changes `apps/case-file` takes longer: case-file's
+new Freight has to pass staging's gate once (about 90 s).
+
+`make reset` also deletes and recreates `rendered/node-network/{staging,prod}`,
+so Chapter 5's `git log` shows just tonight's story: the baseline, then the
+culprit, each with "Source: <sha> by Platform Team".
 
 ## If something goes wrong on stage
 

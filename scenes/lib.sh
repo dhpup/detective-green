@@ -98,12 +98,22 @@ current_freight() {
 }
 
 # promote <project> <stage> <freight>: promote unless the Stage already has it,
-# then wait for the promotion to finish.
+# then wait for the promotion to finish. Retries for a while if Kargo says the
+# Freight isn't available to the Stage yet (it becomes available once it's
+# verified upstream, which trails the upstream promotion by a few seconds).
 promote() {
-  local project="$1" stage="$2" freight="$3" phase
+  local project="$1" stage="$2" freight="$3" out=""
   [[ "$(current_freight "$project" "$stage")" == "$freight" ]] && return 0
-  kargo_cli promote --project "$project" --stage "$stage" --freight "$freight" >/dev/null
-  wait_on_stage "$project" "$stage" "$freight"
+  for _ in $(seq 1 40); do
+    if out="$(kargo_cli promote --project "$project" --stage "$stage" --freight "$freight" 2>&1)"; then
+      wait_on_stage "$project" "$stage" "$freight"
+      return
+    fi
+    [[ "$out" == *"not available to Stage"* ]] || die "$out"
+    [[ "$(current_freight "$project" "$stage")" == "$freight" ]] && return 0  # auto-promotion got there first
+    sleep 3
+  done
+  die "${project}/${stage}: ${freight:0:7} never became available: ${out}"
 }
 
 # wait_on_stage <project> <stage> <freight>: until the Stage's current Freight is
