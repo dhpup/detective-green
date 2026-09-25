@@ -35,7 +35,8 @@ spec:
       message: |-
         ${{ commitFrom(vars.repoURL).Message }}
 
-        Rendered node-network for ${{ ctx.stage }} from ${{ commitFrom(vars.repoURL).ID }}
+        Source: ${{ commitFrom(vars.repoURL).ID }} by ${{ commitFrom(vars.repoURL).Author }}
+        Rendered node-network for ${{ ctx.stage }}
   - uses: git-push
     config:
       path: ./out

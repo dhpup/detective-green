@@ -15,3 +15,6 @@
 
 # Python bytecode (hack/lib/oci.py)
 __pycache__/
+
+# Captures made by scenes/04-capture.sh --save (the curated reference pcaps are committed)
+evidence/capture-*.pcap

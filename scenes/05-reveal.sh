@@ -27,7 +27,16 @@ fi
 
 rendered=origin/rendered/node-network/prod
 say "$ git log ${rendered#origin/}"
-git_scene log -3 --format='%C(yellow)%h%C(reset) %an, %ar%n    %s' "$rendered"
+# Subject plus the "Source: <sha> by <author>" line Kargo writes into each
+# rendered commit: who really made the change.
+git_scene log -3 --format='%h%x1f%ar%x1f%s%x1f%b%x1e' "$rendered" | python3 -c '
+import sys
+for rec in sys.stdin.read().split("\x1e"):
+    if not rec.strip(): continue
+    sha, when, subject, body = (rec.strip("\n").split("\x1f") + [""] * 4)[:4]
+    source = next((l for l in body.splitlines() if l.startswith("Source:")), "")
+    print("\033[33m%s\033[0m %s\n    %s" % (sha, when, subject))
+    if source: print("    \033[2m%s\033[0m" % source)'
 say "$ git show ${rendered#origin/}   (what actually reached prod)"
 git_scene --no-pager show --format= --color=always "$rendered" -- '*node-tuner-blue*' | grep -E '^\S*[-+]' | grep -v -E '^\S*(\+\+\+|---)'
 echo
