@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: evidence-locker
+  name: evidence-locker
+  namespace: case-file-staging
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: evidence-locker
+  template:
+    metadata:
+      labels:
+        app: evidence-locker
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: pool
+                operator: Exists
+      containers:
+      - args:
+        - evidence-locker
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        image: ghcr.io/dhpup/case-file@sha256:4edf1278046a71cf8af1bde3e673cd3fd0ba7efbfe03316f4c9b3d8a5daac4aa
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: http
+        name: evidence-locker
+        ports:
+        - containerPort: 8080
+          name: http
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: http
+        resources:
+          limits:
+            memory: 128Mi
+          requests:
+            cpu: 10m
+            memory: 32Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      topologySpreadConstraints:
+      - labelSelector:
+          matchLabels:
+            app: evidence-locker
+        maxSkew: 1
+        topologyKey: pool
+        whenUnsatisfiable: DoNotSchedule
