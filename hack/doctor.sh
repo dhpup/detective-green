@@ -13,4 +13,5 @@ done
 docker info >/dev/null 2>&1 || { echo "  docker daemon not reachable (is OrbStack running?)"; missing=1; }
 have="$(k3d version 2>/dev/null | awk '/k3d version/{print $3}')"
 [[ "$have" == "$K3D_VERSION" ]] || echo "  note: k3d ${have:-?} installed, tested with ${K3D_VERSION}"
+command -v kargo >/dev/null 2>&1 || echo "  note: the kargo CLI is needed for the scenes (make reset, make scene-*)"
 [[ "$missing" == 0 ]] || die "install the missing prerequisites above"

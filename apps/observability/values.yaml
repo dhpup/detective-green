@@ -66,6 +66,8 @@ grafana:
     auth.anonymous:
       enabled: true
       org_role: Viewer
+    dashboards:
+      default_home_dashboard_path: /var/lib/grafana/dashboards/detective/precinct-board.json
   # Grafana 13 needs headroom: at a 256Mi limit it garbage-collected nonstop,
   # burned several cores and failed its 1s health checks.
   resources:
@@ -91,8 +93,19 @@ grafana:
           url: http://kps-prometheus.observability:9090
           access: proxy
           isDefault: true
-  # The "Precinct Board" dashboard arrives in Phase 5, together with its
-  # dashboardProviders entry and a dashboardsConfigMaps mount.
+  # The "Precinct Board" (manifests/precinct-board.yaml), mounted from a
+  # ConfigMap and set as the home dashboard.
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+        - name: detective
+          folder: The Case of the Green Dashboard
+          type: file
+          options:
+            path: /var/lib/grafana/dashboards/detective
+  dashboardsConfigMaps:
+    detective: precinct-board
 
 kube-state-metrics:
   image:

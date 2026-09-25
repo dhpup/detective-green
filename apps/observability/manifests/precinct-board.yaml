@@ -1,0 +1,447 @@
+# The "Precinct Board": Grafana dashboard, mounted by the Grafana chart
+# (grafana.dashboardsConfigMaps in values.yaml). The top row is what everyone
+# sees at 2am: all green, users failing. "Clues" and "Evidence" start
+# collapsed and are opened during the talk (Chapters 3 and 4).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: precinct-board
+  namespace: observability
+data:
+  precinct-board.json: |
+    {
+      "uid": "precinct-board",
+      "title": "Precinct Board",
+      "tags": [
+        "detective-green"
+      ],
+      "timezone": "browser",
+      "schemaVersion": 39,
+      "version": 1,
+      "refresh": "10s",
+      "time": {
+        "from": "now-30m",
+        "to": "now"
+      },
+      "description": "The Case of the Green Dashboard: what Kubernetes says, what users feel, and the evidence.",
+      "panels": [
+        {
+          "id": 1,
+          "type": "row",
+          "title": "What the dashboard says",
+          "collapsed": false,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 0
+          },
+          "panels": []
+        },
+        {
+          "id": 2,
+          "type": "stat",
+          "title": "Pods ready (what \"Healthy\" means)",
+          "description": "Readiness probes hit /healthz, which is a tiny response. Every pod passes.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "h": 6,
+            "w": 8,
+            "x": 0,
+            "y": 1
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum(kube_pod_status_ready{namespace=~\"case-file-.*\",condition=\"true\"}) / sum(kube_pod_status_ready{namespace=~\"case-file-.*\"})",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              }
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percentunit",
+              "decimals": 1,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "red",
+                    "value": null
+                  },
+                  {
+                    "color": "green",
+                    "value": 0.999
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "background",
+            "graphMode": "area",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "textMode": "value"
+          }
+        },
+        {
+          "id": 3,
+          "type": "stat",
+          "title": "Deployments available",
+          "description": "Everything Kubernetes can see is fine.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "h": 6,
+            "w": 8,
+            "x": 8,
+            "y": 1
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum(kube_deployment_status_replicas_available{namespace=~\"case-file-.*\"}) / sum(kube_deployment_spec_replicas{namespace=~\"case-file-.*\"})",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              }
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percentunit",
+              "decimals": 1,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "red",
+                    "value": null
+                  },
+                  {
+                    "color": "green",
+                    "value": 0.999
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "background",
+            "graphMode": "area",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "textMode": "value"
+          }
+        },
+        {
+          "id": 4,
+          "type": "stat",
+          "title": "Users: requests failing",
+          "description": "The informant plays the city's users: a steady mix of small and large downloads and uploads.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "h": 6,
+            "w": 8,
+            "x": 16,
+            "y": 1
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum(rate(case_file_probe_requests_total{result=\"error\"}[1m])) / sum(rate(case_file_probe_requests_total[1m]))",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              }
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percentunit",
+              "decimals": 1,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "orange",
+                    "value": 0.01
+                  },
+                  {
+                    "color": "red",
+                    "value": 0.05
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "background",
+            "graphMode": "area",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "textMode": "value"
+          }
+        },
+        {
+          "id": 9,
+          "type": "row",
+          "title": "Clues",
+          "collapsed": true,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 7
+          },
+          "panels": [
+            {
+              "id": 5,
+              "type": "timeseries",
+              "title": "Success by payload size",
+              "description": "small = up to 1 KiB (health-check sized), medium = up to 64 KiB, large = bigger. Clue: only bigger requests fail.",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 8
+              },
+              "targets": [
+                {
+                  "refId": "A",
+                  "expr": "sum by (size_bucket) (rate(case_file_probe_requests_total{result=\"ok\"}[1m])) / sum by (size_bucket) (rate(case_file_probe_requests_total[1m]))",
+                  "legendFormat": "{{size_bucket}}",
+                  "datasource": {
+                    "type": "prometheus",
+                    "uid": "prometheus"
+                  }
+                }
+              ],
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "percentunit",
+                  "custom": {
+                    "lineWidth": 2,
+                    "fillOpacity": 10
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "legend": {
+                  "displayMode": "table",
+                  "placement": "right",
+                  "calcs": [
+                    "lastNotNull"
+                  ]
+                },
+                "tooltip": {
+                  "mode": "multi"
+                }
+              }
+            },
+            {
+              "id": 6,
+              "type": "timeseries",
+              "title": "Success by destination node",
+              "description": "Which node's API pod served the request (frontdesk reports it even for failures). Clue: only one node.",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 8
+              },
+              "targets": [
+                {
+                  "refId": "A",
+                  "expr": "sum by (dst_node) (rate(case_file_probe_requests_total{result=\"ok\"}[1m])) / sum by (dst_node) (rate(case_file_probe_requests_total[1m]))",
+                  "legendFormat": "{{dst_node}}",
+                  "datasource": {
+                    "type": "prometheus",
+                    "uid": "prometheus"
+                  }
+                }
+              ],
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "percentunit",
+                  "custom": {
+                    "lineWidth": 2,
+                    "fillOpacity": 10
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "legend": {
+                  "displayMode": "table",
+                  "placement": "right",
+                  "calcs": [
+                    "lastNotNull"
+                  ]
+                },
+                "tooltip": {
+                  "mode": "multi"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": 10,
+          "type": "row",
+          "title": "Evidence",
+          "collapsed": true,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 8
+          },
+          "panels": [
+            {
+              "id": 7,
+              "type": "timeseries",
+              "title": "TCP retransmits, frontdesk \u2192 API, by node",
+              "description": "From TCP_INFO on frontdesk's connections to each API pod: segments the kernel had to send again. The same evidence as the pcap.",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 17
+              },
+              "targets": [
+                {
+                  "refId": "A",
+                  "expr": "sum by (dst_node) (rate(case_file_upstream_tcp_retransmits_total[1m]))",
+                  "legendFormat": "{{dst_node}}",
+                  "datasource": {
+                    "type": "prometheus",
+                    "uid": "prometheus"
+                  }
+                }
+              ],
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "short",
+                  "custom": {
+                    "lineWidth": 2,
+                    "fillOpacity": 10
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "legend": {
+                  "displayMode": "table",
+                  "placement": "right",
+                  "calcs": [
+                    "lastNotNull"
+                  ]
+                },
+                "tooltip": {
+                  "mode": "multi"
+                }
+              }
+            },
+            {
+              "id": 8,
+              "type": "timeseries",
+              "title": "eth0 receive drops, by node",
+              "description": "Frames the node's interface dropped on arrival. The staging gate fails if this moves.",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 17
+              },
+              "targets": [
+                {
+                  "refId": "A",
+                  "expr": "sum by (node) (rate(node_network_receive_drop_total{device=\"eth0\"}[1m]))",
+                  "legendFormat": "{{node}}",
+                  "datasource": {
+                    "type": "prometheus",
+                    "uid": "prometheus"
+                  }
+                }
+              ],
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "short",
+                  "custom": {
+                    "lineWidth": 2,
+                    "fillOpacity": 10
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "legend": {
+                  "displayMode": "table",
+                  "placement": "right",
+                  "calcs": [
+                    "lastNotNull"
+                  ]
+                },
+                "tooltip": {
+                  "mode": "multi"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }

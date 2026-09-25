@@ -1,0 +1,31 @@
+# One Application per env/<cluster> directory; only env/prod exists.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: cold-case
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+  - git:
+      repoURL: https://github.com/dhpup/detective-green.git
+      revision: HEAD
+      directories:
+      - path: apps/cold-case/env/*
+  template:
+    metadata:
+      name: 'cold-case-{{.path.basename}}'
+    spec:
+      project: cold-case
+      source:
+        repoURL: https://github.com/dhpup/detective-green.git
+        targetRevision: HEAD
+        path: '{{.path.path}}'
+      destination:
+        name: '{{.path.basename}}'
+        namespace: cold-case
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true

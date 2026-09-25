@@ -1,0 +1,6 @@
+"Retransmissions" tcp.analysis.retransmission
+"Duplicate ACKs" tcp.analysis.duplicate_ack
+"ICMP fragmentation needed (should be empty)" icmp.type == 3 && icmp.code == 4
+"Full-size segments" tcp.len >= 1300
+"Uploads to the API" tcp.dstport == 8080 && tcp.len > 0
+"One stream (edit the number)" tcp.stream == 0

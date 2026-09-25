@@ -1,0 +1,19 @@
+# Default-deny for fingerprints, with the one rule written for the old port.
+# Nobody updated it when fingerprints moved to 9090, so Cilium drops every
+# request and Hubble reports it as "Policy denied".
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: fingerprints-ingress
+  namespace: cold-case
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  endpointSelector:
+    matchLabels: {app: fingerprints}
+  ingress:
+    - fromEndpoints:
+        - matchLabels: {app: cold-case-client}
+      toPorts:
+        - ports:
+            - {port: "8080", protocol: TCP}

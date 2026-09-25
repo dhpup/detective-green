@@ -1,0 +1,12 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: cold-case
+  namespace: argocd
+spec:
+  description: The warm-up case (a policy drop), prod only
+  sourceRepos: [https://github.com/dhpup/detective-green.git]
+  destinations:
+    - {name: prod, namespace: cold-case}
+  clusterResourceWhitelist:
+    - {group: '', kind: Namespace}

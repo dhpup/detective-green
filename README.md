@@ -11,8 +11,8 @@ time with a promotion gate.
 Everything here is open source: k3d, Cilium + Hubble, Argo CD, Argo Rollouts,
 Kargo, tcpdump and Wireshark.
 
-> **Status:** under construction. The lab's clusters and control plane work
-> today. The apps, the gate and the scene scripts are still being built.
+> **Status:** the lab, the apps, the promotion gate and the scene scripts
+> work. Rehearsal material (runbook, recordings) is still to come.
 
 ## Reproduce the case at home
 
@@ -21,10 +21,13 @@ Prerequisites: [OrbStack](https://orbstack.dev) (or another Docker runtime),
 Tested on OrbStack. About 12 GB of RAM free is comfortable.
 
 ```bash
-make doctor   # check prerequisites
-make up       # staging + prod (Cilium) and mgmt (Argo CD, Argo Rollouts, Kargo)
-make status
-make down     # delete it all; other k3d clusters are untouched
+make doctor      # check prerequisites
+make up          # staging + prod (Cilium) and mgmt (Argo CD, Argo Rollouts, Kargo)
+make bootstrap   # point Argo CD at this repo
+GITHUB_USER=<you> make credentials   # a token Kargo can push rendered/* branches with
+make reset       # the "2am" state: all green, users failing
+make scene-4     # ...and so on through the chapters: see docs/scenes.md
+make down        # delete it all; other k3d clusters are untouched
 ```
 
 `make up` prints the Argo CD and Kargo URLs and admin passwords. Both UIs use
@@ -34,6 +37,7 @@ self-signed certificates and listen on localhost only:
 |---|---|
 | Argo CD | https://localhost:8443 |
 | Kargo | https://localhost:8444 |
+| Grafana, staging / prod ("Precinct Board") | http://localhost:3001 / http://localhost:3002 |
 
 ### Using your own fork
 

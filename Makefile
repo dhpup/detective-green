@@ -17,8 +17,8 @@ up: ## Create staging, prod and mgmt clusters with the full control plane
 	@hack/up.sh
 
 .PHONY: bootstrap
-bootstrap: ## Apply the root app-of-apps (after this repo is pushed to GitHub)
-	kubectl --context k3d-mgmt apply -f bootstrap/platform-aoa.yaml
+bootstrap: ## Apply the root app-of-apps (creates the live branch if needed)
+	@hack/bootstrap.sh
 
 .PHONY: credentials
 credentials: ## Give each Kargo Project git credentials (GITHUB_USER; prompts for the token)
@@ -33,7 +33,31 @@ down: ## Delete the lab's clusters (other k3d clusters are untouched)
 	@hack/down.sh
 
 .PHONY: reset
-reset: down up ## Recreate the lab from scratch (scene reset arrives in Phase 5)
+reset: ## Put the lab into the "2am" state (scene 00; takes a few minutes)
+	@scenes/00-crime.sh
+
+.PHONY: rebuild
+rebuild: down up ## Recreate all clusters from scratch
+
+.PHONY: scene-2
+scene-2: ## Chapter 2: the warm-up case (Hubble finds the policy drop)
+	@scenes/02-cold-case.sh
+
+.PHONY: scene-4
+scene-4: ## Chapter 4: live tcpdump of the failing uploads (prod)
+	@scenes/04-capture.sh
+
+.PHONY: scene-5
+scene-5: ## Chapter 5: the reveal (the culprit in the rendered branch)
+	@scenes/05-reveal.sh
+
+.PHONY: scene-5-fix
+scene-5-fix: ## Chapter 5: revert the culprit; the fix auto-promotes
+	@scenes/05-reveal.sh --fix
+
+.PHONY: scene-6
+scene-6: ## Chapter 6: merge the gate, re-push the culprit, watch it get caught
+	@scenes/06-never-again.sh
 
 .PHONY: test
 test: ## Go vet, tests (with -race), golangci-lint and govulncheck, in pinned containers

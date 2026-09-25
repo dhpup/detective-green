@@ -3,6 +3,10 @@
 # AnalysisTemplates) to the Kargo control plane: the Argo CD cluster named
 # `kargo` (registered by hack/register-clusters.sh).
 #
+# Tracks the `live` branch, not main: `live` is the branch the talk's scenes
+# commit to (the culprit, the fix, the Chapter 6 gate merge), and
+# `make reset` rebuilds it from main. main stays clean for attendees.
+#
 # NOTE: automated sync is REQUIRED here. Without it, merged changes to
 # apps/*/kargo/*.yaml never reach Kargo. Chapter 6 depends on this, because we
 # merge a verification change live.
@@ -17,7 +21,7 @@ spec:
   generators:
   - git:
       repoURL: https://github.com/dhpup/detective-green.git
-      revision: HEAD
+      revision: live
       directories:
       - path: apps/*/kargo
       # On first bootstrap these Applications can be generated before their
@@ -32,7 +36,7 @@ spec:
       project: '{{index .path.segments 1}}'
       source:
         repoURL: https://github.com/dhpup/detective-green.git
-        targetRevision: HEAD
+        targetRevision: live
         path: '{{.path.path}}'
         directory:
           recurse: true

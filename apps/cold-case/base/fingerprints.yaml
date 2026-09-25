@@ -1,0 +1,47 @@
+# The new service. It moved to port 9090 in this release.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fingerprints
+  namespace: cold-case
+  labels: {app: fingerprints}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: fingerprints}
+  template:
+    metadata:
+      labels: {app: fingerprints}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: fingerprints
+          image: ghcr.io/dhpup/case-file
+          args: [evidence-locker, -listen, ":9090"]
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef: {fieldPath: spec.nodeName}
+          ports:
+            - {name: http, containerPort: 9090}
+          readinessProbe:
+            httpGet: {path: /healthz, port: http}
+          resources:
+            requests: {cpu: 5m, memory: 16Mi}
+            limits: {memory: 64Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fingerprints
+  namespace: cold-case
+spec:
+  selector: {app: fingerprints}
+  ports:
+    - {name: http, port: 9090}

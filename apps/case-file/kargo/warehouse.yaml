@@ -19,6 +19,7 @@ spec:
   # apps' changes never trigger this Warehouse.
   - git:
       repoURL: https://github.com/dhpup/detective-green.git
-      branch: main
+      # `live`, not main: the branch the scenes commit to (see bootstrap/kargo-apps.yaml).
+      branch: live
       includePaths:
       - apps/case-file

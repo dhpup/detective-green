@@ -1,0 +1,33 @@
+# The client, "v1.3": now calls fingerprints on its new port, 9090.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cold-case-client
+  namespace: cold-case
+  labels: {app: cold-case-client, version: v1.3}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: cold-case-client}
+  template:
+    metadata:
+      labels: {app: cold-case-client, version: v1.3}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: client
+          image: ghcr.io/dhpup/case-file
+          args: [informant, -target, "http://fingerprints:9090", -sizes, "1K", -interval, 3s, -timeout, 2s, -listen, ":9091"]
+          ports:
+            - {name: metrics, containerPort: 9091}
+          readinessProbe:
+            httpGet: {path: /healthz, port: metrics}
+          resources:
+            requests: {cpu: 5m, memory: 16Mi}
+            limits: {memory: 64Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
