@@ -23,6 +23,15 @@ done
 grep -q "ARG BASE_IMAGE=${ALPINE_IMAGE}\$" "${ROOT}/src/evidence-kit/Dockerfile" \
   || { echo "  MISMATCH src/evidence-kit/Dockerfile base != ALPINE_IMAGE"; fail=1; }
 
+casefile="${ROOT}/src/case-file/Dockerfile"
+if ! grep -q "^ARG GO_IMAGE=${GO_BUILD_IMAGE}\$" "$casefile" \
+   || ! grep -q "^ARG BASE_IMAGE=${DISTROLESS_STATIC_IMAGE}\$" "$casefile"; then
+  echo "  MISMATCH src/case-file/Dockerfile bases != versions.env"; fail=1
+fi
+for var in TRIVY_IMAGE GOLANGCI_LINT_IMAGE; do
+  check "${!var}" "versions.env ${var}"
+done
+
 payload="${ROOT}/hack/phase0/payload/Dockerfile"
 if ! grep -q "^FROM ${GO_BUILD_IMAGE} AS build\$" "$payload" \
    || ! grep -q "^FROM ${DISTROLESS_STATIC_IMAGE}\$" "$payload"; then

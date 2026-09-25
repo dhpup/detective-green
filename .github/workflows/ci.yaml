@@ -41,3 +41,57 @@ jobs:
           persist-credentials: false
       - name: Verify chart digests and image pins
         run: hack/verify-pins.sh
+
+  go:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: src/case-file
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: src/case-file/go.mod
+          cache-dependency-path: src/case-file/go.sum
+      - name: Load pinned versions
+        working-directory: .
+        run: grep -E '^[A-Z0-9_]+=' versions.env >> "$GITHUB_ENV"
+      - run: go vet ./...
+      - run: go test -race -count=1 ./...
+      - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        with:
+          version: v2.14.0
+          working-directory: src/case-file
+      - name: govulncheck
+        run: go run "golang.org/x/vuln/cmd/govulncheck@${GOVULNCHECK_VERSION}" ./...
+
+  images:
+    # Builds both images on every PR (not pushed) and scans them, so a
+    # vulnerable base is caught before anyone tags a release.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      matrix:
+        image: [case-file, evidence-kit]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Load pinned versions
+        run: grep -E '^[A-Z0-9_]+=' versions.env >> "$GITHUB_ENV"
+      - name: Build
+        env:
+          IMAGE: ${{ matrix.image }}
+        run: |
+          if [ "$IMAGE" = case-file ]; then base="$DISTROLESS_STATIC_IMAGE"; else base="$ALPINE_IMAGE"; fi
+          docker build --build-arg GO_IMAGE="$GO_BUILD_IMAGE" --build-arg BASE_IMAGE="$base" \
+            -t scan:local "src/${IMAGE}"
+      - name: Scan (fails on fixable HIGH/CRITICAL)
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+            -v "$PWD/.trivyignore.yaml:/.trivyignore.yaml:ro" "$TRIVY_IMAGE" \
+            image --exit-code 1 --ignore-unfixed --severity CRITICAL,HIGH \
+            --ignorefile /.trivyignore.yaml scan:local

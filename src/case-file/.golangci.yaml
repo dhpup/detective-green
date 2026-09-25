@@ -1,0 +1,19 @@
+version: "2"
+linters:
+  default: standard
+  enable:
+    - bodyclose
+    - errorlint
+    - gosec
+    - misspell
+    - noctx
+    - revive
+    - unconvert
+  settings:
+    gosec:
+      excludes:
+        - G404 # math/rand picks a backend pod; not security-sensitive
+formatters:
+  enable:
+    - gofmt
+    - goimports

@@ -35,6 +35,14 @@ down: ## Delete the lab's clusters (other k3d clusters are untouched)
 .PHONY: reset
 reset: down up ## Recreate the lab from scratch (scene reset arrives in Phase 5)
 
+.PHONY: test
+test: ## Go vet, tests (with -race), golangci-lint and govulncheck, in pinned containers
+	@hack/test.sh
+
+.PHONY: images
+images: ## Build our images locally (case-file, evidence-kit) and scan them
+	@hack/images.sh
+
 .PHONY: lint
 lint: ## Run every pre-commit hook (in a container; no local installs needed)
 	@hack/lint.sh
