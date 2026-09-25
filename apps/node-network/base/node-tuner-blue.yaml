@@ -22,7 +22,7 @@ spec:
           args:
             - tuner
             - --interface=eth0
-            - --mtu=1500
+            - --mtu=1450
             - --listen=:9102
           ports:
             - {name: metrics, containerPort: 9102}
