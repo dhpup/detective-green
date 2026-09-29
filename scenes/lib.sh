@@ -25,6 +25,17 @@ scene_repo() {
   git_scene fetch -q --prune origin '+refs/heads/*:refs/remotes/origin/*'
 }
 
+# scene_repo_cached: for read-only scenes. Uses the clone as it is when
+# OFFLINE=1, or when GitHub is unreachable or too slow (venue Wi-Fi); make
+# reset leaves the clone up to date, so it's never stale on stage.
+scene_repo_cached() {
+  [[ -d "${SCENE_REPO}/.git" ]] || { scene_repo; return; }
+  [[ "${OFFLINE:-0}" == 1 ]] && return
+  GIT_HTTP_LOW_SPEED_LIMIT=1000 GIT_HTTP_LOW_SPEED_TIME=5 GIT_TERMINAL_PROMPT=0 \
+    git_scene fetch -q --prune origin '+refs/heads/*:refs/remotes/origin/*' 2>/dev/null \
+    || log "GitHub unreachable: using the local copy from the last make reset" >&2
+}
+
 push_live() { git_scene push -q --force-with-lease origin HEAD:refs/heads/live; }
 
 # changelog <line>: append to apps/node-network/CHANGELOG.md (not rendered).

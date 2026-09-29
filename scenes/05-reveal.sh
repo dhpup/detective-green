@@ -2,13 +2,14 @@
 # Chapter 5, the reveal: the call was coming from inside the repo.
 #
 #   scenes/05-reveal.sh         what reached prod, as plain rendered YAML
+#                               (OFFLINE=1: skip fetching; uses the local clone)
 #   scenes/05-reveal.sh --fix   revert the culprit on live; node-network
 #                               auto-promotes the fix through staging and prod
 # shellcheck source=lib.sh
 source "$(dirname "$0")/lib.sh"
-scene_repo
 
 if [[ "${1:-}" == --fix ]]; then
+  scene_repo
   git_scene checkout -q -B live origin/live
   culprit="$(commit_with_subject "$CULPRIT_MSG")"
   [[ -n "$culprit" ]] || die "no culprit commit on live (run scenes/00-crime.sh first)"
@@ -25,6 +26,8 @@ if [[ "${1:-}" == --fix ]]; then
   exit 0
 fi
 
+# The reveal only reads git, so it works offline (see scene_repo_cached).
+scene_repo_cached
 rendered=origin/rendered/node-network/prod
 say "$ git log ${rendered#origin/}"
 # Subject plus the "Source: <sha> by <author>" line Kargo writes into each

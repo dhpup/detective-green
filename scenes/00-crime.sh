@@ -86,6 +86,9 @@ for _ in $(seq 1 30); do
   sleep 2
 done
 
+# Fetch Kargo's rendered commits now, so Chapter 5's reveal works offline.
+git_scene fetch -q --prune origin '+refs/heads/*:refs/remotes/origin/*'
+
 say "It's 2am. ($(( $(date +%s) - start ))s)"
 kubectl --context "$(ctx mgmt)" -n argocd get applications -o custom-columns='APP:.metadata.name,SYNC:.status.sync.status,HEALTH:.status.health.status' \
   | grep -E "APP|case-file-|node-network-|informant-"

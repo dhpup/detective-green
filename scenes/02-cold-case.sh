@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Chapter 2, the warm-up case: flow logs solve it in seconds.
+# Chapter 3's contrast (the old warm-up): what a policy drop looks like.
+# Flow logs solve this kind of case in seconds; it's a screenshot in the talk.
 # Shows Hubble's DROPPED flows in prod's cold-case namespace: the client (v1.3)
 # calls fingerprints on port 9090, and the policy only allows 8080.
 # shellcheck source=lib.sh

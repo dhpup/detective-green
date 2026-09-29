@@ -39,16 +39,24 @@ reset: ## Put the lab into the "2am" state (scene 00; takes a few minutes)
 .PHONY: rebuild
 rebuild: down up ## Recreate all clusters from scratch
 
+.PHONY: scene-1
+scene-1: ## Chapter 1: the probes ask for 2 bytes, users send a megabyte (prod)
+	@scenes/01-scene-of-the-crime.sh
+
 .PHONY: scene-2
-scene-2: ## Chapter 2: the warm-up case (Hubble finds the policy drop)
+scene-2: ## Chapter 3's contrast: what a policy drop looks like (cold-case)
 	@scenes/02-cold-case.sh
+
+.PHONY: scene-3
+scene-3: ## Chapter 3: Hubble says FORWARDED, DNS answers (prod)
+	@scenes/03-suspects.sh
 
 .PHONY: scene-4
 scene-4: ## Chapter 4: live tcpdump of the failing uploads (prod)
 	@scenes/04-capture.sh
 
 .PHONY: scene-5
-scene-5: ## Chapter 5: the reveal (the culprit in the rendered branch)
+scene-5: ## Chapter 5: the reveal (the culprit in the rendered branch; works offline)
 	@scenes/05-reveal.sh
 
 .PHONY: scene-5-fix
